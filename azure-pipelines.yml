@@ -4,33 +4,39 @@
 # https://aka.ms/yaml
 
 trigger:
-- main
-
+  - main
+  
 pool:
   vmImage: 'windows-latest'
+
+variables:
+  - name: sourceDirectory
+    value: source
 
 steps:
 
 - script: |
     dotnet restore
     dotnet build --configuration Release
+  workingDirectory: "${{variables.sourceDirectory}}"
 
 - task: DotNetCoreCLI@2
   inputs:
     command: publish
     arguments: '--configuration Release --output publish_output'
-    projects: 'source/*.csproj'
+    projects: '*.csproj'
     publishWebProjects: false
     modifyOutputPath: false
     zipAfterPublish: false
+    workingDirectory: "${{variables.sourceDirectory}}"
 
 - task: ArchiveFiles@2
   displayName: "Archive files"
   inputs:
-    rootFolderOrFile: "$(System.DefaultWorkingDirectory)/publish_output"
+    rootFolderOrFile: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/publish_output"
     includeRootFolder: false
     archiveFile: "$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip"
-
+    
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
