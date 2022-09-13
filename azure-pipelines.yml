@@ -62,5 +62,5 @@ steps:
     scriptType: batch
     scriptLocation: inlineScript
     inlineScript: |
-      az --version
-      az deployment group create --resource-group ${{variables.resourceGroupName}} --template-file ${{variables.templateFile}}
+      call az --version
+      call az deployment group create --resource-group ${{variables.resourceGroupName}} --template-file ${{variables.templateFile}}
