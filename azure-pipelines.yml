@@ -11,7 +11,10 @@ pool:
 
 variables:
   - name: sourceDirectory
-    value: source
+    value: source  
+    azureServiceConnection: 'MCAPS Hybrid'
+    resourceGroupName: 'DevOpsSandbox'
+    templateFile: 'main.bicep'
 
 steps:
 
@@ -46,3 +49,12 @@ steps:
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
     artifactName: 'drop'
+
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az --version
+      az deployment group create --resource-group $(resourceGroupName) --template-file $(templateFile)
