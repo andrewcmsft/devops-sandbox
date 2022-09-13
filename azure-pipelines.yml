@@ -15,25 +15,30 @@ variables:
 
 steps:
 
-- script: |
-    dotnet restore
-    dotnet build --configuration Release
-  workingDirectory: "${{variables.sourceDirectory}}"
+- task: DotNetCoreCLI@2
+  inputs:
+    command: restore
+    arguments: '--configuration Release'
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: '${{variables.sourceDirectory}}/DevOpsSandbox.Tests/*.csproj'
 
 - task: DotNetCoreCLI@2
   inputs:
     command: publish
-    arguments: '--configuration Release --output publish_output'
-    projects: '*.csproj'
+    arguments: '--configuration Release --output "${{variables.sourceDirectory}}/DevOpsSandbox/publish_output"'
+    projects: '${{variables.sourceDirectory}}/DevOpsSandbox/*.csproj'
     publishWebProjects: false
     modifyOutputPath: false
     zipAfterPublish: false
-    workingDirectory: "${{variables.sourceDirectory}}"
 
 - task: ArchiveFiles@2
   displayName: "Archive files"
   inputs:
-    rootFolderOrFile: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/publish_output"
+    rootFolderOrFile: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output"
     includeRootFolder: false
     archiveFile: "$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip"
     

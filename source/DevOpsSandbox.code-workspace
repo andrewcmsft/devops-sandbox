@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "DevOpsSandbox.Tests"
+		},
+		{
+			"path": "DevOpsSandbox"
+		}
+	],
+	"settings": {
+		"debug.internalConsoleOptions": "neverOpen"
+	}
+}
