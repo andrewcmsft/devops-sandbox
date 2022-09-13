@@ -12,9 +12,15 @@ pool:
 variables:
   - name: sourceDirectory
     value: source  
-    azureServiceConnection: 'MCAPS Hybrid'
-    resourceGroupName: 'DevOpsSandbox'
-    templateFile: 'main.bicep'
+
+  - name:  azureServiceConnection
+    value: MCAPS Hybrid
+
+  - name: resourceGroupName
+    value: DevOpsSandbox
+
+  - name: templateFile
+    value: 'main.bicep'
 
 steps:
 
