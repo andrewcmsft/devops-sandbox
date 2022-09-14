@@ -58,12 +58,20 @@ steps:
     PathtoPublish: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output\publish_output.zip'
     artifactName: 'drop'
 
+- bash: az bicep build --file main.bicep
+  displayName: 'Compile Bicep to ARM'
+
+- task: CmdLine@2
+  displayName: 'Debug'
+  inputs: 
+    script: 'tree /f'
+
 - task: AzureResourceGroupDeployment@2
   displayName: 'Deploy Bicep'  
   inputs:
     azureSubscription: ${{variables.azureServiceConnection}}
     resourceGroupName: ${{variables.resourceGroupName}}
-    csmFile: ${{variables.templateFile}}
+    csmFile: main.json
     deploymentOutputs: deploymentOutput
 
 - task: Powershell@2
