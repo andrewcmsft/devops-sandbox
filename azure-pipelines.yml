@@ -41,23 +41,16 @@ steps:
   displayName: "Publish Function App"
   inputs:
     command: publish
-    arguments: '--configuration Release --output "${{variables.sourceDirectory}}/DevOpsSandbox/publish_output"'
+    arguments: '--configuration Release --output "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output"'
     projects: '${{variables.sourceDirectory}}/DevOpsSandbox/*.csproj'
     publishWebProjects: false
     modifyOutputPath: false
     zipAfterPublish: true
-
-- task: ArchiveFiles@2
-  displayName: "Generate build artifacts"
-  inputs:
-    rootFolderOrFile: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output.zip"
-    includeRootFolder: false
-    archiveFile: "$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip"
     
 - task: PublishBuildArtifacts@1
   displayName: "Publish build artifacts"  
   inputs:
-    PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
+    PathtoPublish: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output.zip"
     artifactName: 'drop'
 
 - task: AzureResourceGroupDeployment@2
