@@ -25,42 +25,78 @@ variables:
 steps:
 
 - task: DotNetCoreCLI@2
+  displayName: "Restore Function App"
   inputs:
     command: restore
     arguments: '--configuration Release'
     projects: '**/*.csproj'
 
 - task: DotNetCoreCLI@2
+  displayName: "Test Function App"
   inputs:
     command: test
     projects: '${{variables.sourceDirectory}}/DevOpsSandbox.Tests/*.csproj'
 
 - task: DotNetCoreCLI@2
+  displayName: "Publish Function App"
   inputs:
     command: publish
     arguments: '--configuration Release --output "${{variables.sourceDirectory}}/DevOpsSandbox/publish_output"'
     projects: '${{variables.sourceDirectory}}/DevOpsSandbox/*.csproj'
     publishWebProjects: false
     modifyOutputPath: false
-    zipAfterPublish: false
+    zipAfterPublish: true
 
 - task: ArchiveFiles@2
-  displayName: "Archive files"
+  displayName: "Generate build artifacts"
   inputs:
-    rootFolderOrFile: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output"
+    rootFolderOrFile: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output.zip"
     includeRootFolder: false
     archiveFile: "$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip"
     
 - task: PublishBuildArtifacts@1
+  displayName: "Publish build artifacts"  
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
     artifactName: 'drop'
 
-- task: AzureCLI@2
+- task: AzureResourceGroupDeployment@2
+  displayName: "Deploy Bicep"  
   inputs:
     azureSubscription: ${{variables.azureServiceConnection}}
-    scriptType: batch
-    scriptLocation: inlineScript
-    inlineScript: |
-      call az --version
-      call az deployment group create --resource-group ${{variables.resourceGroupName}} --template-file ${{variables.templateFile}}
+    resourceGroupName: ${{variables.resourceGroupName}}
+    csmFile: ${{variables.templateFile}}
+    deploymentOutputs: deploymentOutput
+
+- task: Powershell@2
+  displayName: "Process deployment output"  
+  inputs:
+    script: |
+      $var=ConvertFrom-Json '$(deploymentOutput)'
+      $value=$var.functionName.value
+
+      Write-Output $value
+      Write-Host "##vso[task.setvariable variable=functionName;]$value"
+
+- task: AzureFunctionApp@1
+  displayName: "Deploy Function App"  
+  inputs:
+    azureSubscription: $(variables.azureServiceConnection)
+    appName: $(variables.functionName)
+    appType: functionApp
+    package: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output.zip"
+
+#- task: AzureCLI@2
+#  inputs:
+#    azureSubscription: ${{variables.azureServiceConnection}}
+#    scriptType: ps
+#    scriptLocation: inlineScript
+#    inlineScript: |
+#      az --version
+#      az deployment group create --resource-group ${{variables.resourceGroupName}} --template-file ${{variables.templateFile}}
+#
+#      $var=ConvertFrom-Json '$(functionName)'
+#      $value=$var.functionName.value
+#
+#      Write-Output $value
+#      Write-Host "##vso[task.setvariable variable=functionName;]$value"
