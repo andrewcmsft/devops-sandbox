@@ -87,7 +87,6 @@ steps:
       $var=ConvertFrom-Json '$(deploymentOutput)'
       $value=$var.functionName.value
 
-      Write-Output ${{variables.deploymentOutput.functionName.value}}
       Write-Output $value
       Write-Host "##vso[task.setvariable variable=functionName;]$value"
 
