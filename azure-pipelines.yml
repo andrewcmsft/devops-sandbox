@@ -25,36 +25,41 @@ variables:
 steps:
 
 - task: DotNetCoreCLI@2
-  displayName: "Restore Function App"
+  displayName: 'Restore Function App'
   inputs:
     command: restore
     arguments: '--configuration Release'
-    projects: '**/*.csproj'
+    projects: '**\*.csproj'
 
 - task: DotNetCoreCLI@2
-  displayName: "Test Function App"
+  displayName: 'Test Function App'
   inputs:
     command: test
-    projects: '${{variables.sourceDirectory}}/DevOpsSandbox.Tests/*.csproj'
+    projects: '${{variables.sourceDirectory}}\DevOpsSandbox.Tests\*.csproj'
 
 - task: DotNetCoreCLI@2
-  displayName: "Publish Function App"
+  displayName: 'Publish Function App'
   inputs:
     command: publish
-    arguments: '--configuration Release --output "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output"'
-    projects: '${{variables.sourceDirectory}}/DevOpsSandbox/*.csproj'
+    arguments: '--configuration Release --output $(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output'
+    projects: '${{variables.sourceDirectory}}\DevOpsSandbox\*.csproj'
     publishWebProjects: false
     modifyOutputPath: false
     zipAfterPublish: true
+
+- task: CmdLine@2
+  displayName: 'Debug'
+  inputs: 
+    script: 'tree /f'
     
 - task: PublishBuildArtifacts@1
-  displayName: "Publish build artifacts"  
+  displayName: 'Publish build artifacts'  
   inputs:
-    PathtoPublish: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output.zip"
+    PathtoPublish: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output.zip'
     artifactName: 'drop'
 
 - task: AzureResourceGroupDeployment@2
-  displayName: "Deploy Bicep"  
+  displayName: 'Deploy Bicep'  
   inputs:
     azureSubscription: ${{variables.azureServiceConnection}}
     resourceGroupName: ${{variables.resourceGroupName}}
@@ -62,7 +67,7 @@ steps:
     deploymentOutputs: deploymentOutput
 
 - task: Powershell@2
-  displayName: "Process deployment output"  
+  displayName: 'Process deployment output'  
   inputs:
     script: |
       $var=ConvertFrom-Json '$(deploymentOutput)'
@@ -72,12 +77,12 @@ steps:
       Write-Host "##vso[task.setvariable variable=functionName;]$value"
 
 - task: AzureFunctionApp@1
-  displayName: "Deploy Function App"  
+  displayName: 'Deploy Function App'  
   inputs:
     azureSubscription: ${{variables.azureServiceConnection}}
     appName: ${{variables.functionName}}
     appType: functionApp
-    package: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output.zip"
+    package: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output.zip'
     deploymentMethod: zipDeploy
 
 #- task: AzureCLI@2
