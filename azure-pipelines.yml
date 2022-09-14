@@ -81,10 +81,11 @@ steps:
 - task: AzureFunctionApp@1
   displayName: "Deploy Function App"  
   inputs:
-    azureSubscription: $(variables.azureServiceConnection)
-    appName: $(variables.functionName)
+    azureSubscription: ${{variables.azureServiceConnection}}
+    appName: ${{variables.functionName}}
     appType: functionApp
     package: "$(System.DefaultWorkingDirectory)/${{variables.sourceDirectory}}/DevOpsSandbox/publish_output.zip"
+    deploymentMethod: zipDeploy
 
 #- task: AzureCLI@2
 #  inputs:
