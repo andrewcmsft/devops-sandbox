@@ -55,7 +55,7 @@ steps:
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build artifacts'  
   inputs:
-    PathtoPublish: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output.zip'
+    PathtoPublish: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output\publish_output.zip'
     artifactName: 'drop'
 
 - task: AzureResourceGroupDeployment@2
@@ -82,7 +82,7 @@ steps:
     azureSubscription: ${{variables.azureServiceConnection}}
     appName: ${{variables.functionName}}
     appType: functionApp
-    package: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output.zip'
+    package: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output\publish_output.zip'
     deploymentMethod: zipDeploy
 
 #- task: AzureCLI@2
