@@ -58,10 +58,12 @@ steps:
 #
 
 - task: TerraformInstaller@0
+  displayName: 'Terraform - install'
   inputs:
     terraformVersion: 'latest'
 
 - task: TerraformTaskV3@3
+  displayName: 'Terraform - init'
   inputs:
     provider: 'azurerm'
     command: 'init'
@@ -73,18 +75,20 @@ steps:
     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
 
 - task: TerraformTaskV3@3
+  displayName: 'Terraform - plan'
   inputs:
     provider: 'azurerm'
     command: 'plan'
-    environmentServiceNameAzureRM: 'MCAPS Hybrid State'
+    environmentServiceNameAzureRM: 'MCAPS Hybrid'
     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
 
 - task: TerraformTaskV3@3
+  displayName: 'Terraform - apply'
   name: 'terraformApply'
   inputs:
     provider: 'azurerm'
     command: 'apply'
-    environmentServiceNameAzureRM: 'MCAPS Hybrid State'
+    environmentServiceNameAzureRM: 'MCAPS Hybrid'
     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
 
 - task: PowerShell@2
