@@ -94,10 +94,12 @@ steps:
     workingDirectory: '$(System.DefaultWorkingDirectory)\terraform'
 
 - task: TerraformTaskV3@3
+  displayName: 'Terraform - output'
   name: 'terraformOutput'
   inputs:
     provider: 'azurerm'
     command: 'output'
+    environmentServiceNameAzureRM: 'MCAPS Hybrid'
     workingDirectory: '$(System.DefaultWorkingDirectory)\terraform'
 
 - task: PowerShell@2
