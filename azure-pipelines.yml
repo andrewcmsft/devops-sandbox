@@ -47,69 +47,101 @@ steps:
     modifyOutputPath: false
     zipAfterPublish: true
 
-- task: CmdLine@2
-  displayName: 'Debug'
-  inputs: 
-    script: 'tree /f'
-    
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish build artifacts'  
+  displayName: 'Publish build artifacts'
   inputs:
     PathtoPublish: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output\publish_output.zip'
     artifactName: 'drop'
 
-- task: AzureCLI@2
-  displayName: 'Compile Bicep to ARM'
+#
+# Deployment via Terraform
+#
+
+- task: TerraformInstaller@0
   inputs:
-    azureSubscription: ${{variables.azureServiceConnection}}
-    scriptType: ps
-    scriptLocation: inlineScript
-    inlineScript: az bicep build --file main.bicep
+    terraformVersion: 'latest'
 
-- task: CmdLine@2
-  displayName: 'Debug'
-  inputs: 
-    script: 'tree /f'
-
-- task: AzureResourceGroupDeployment@2
-  displayName: 'Deploy Bicep'  
+- task: TerraformTaskV3@3
   inputs:
-    azureSubscription: ${{variables.azureServiceConnection}}
-    resourceGroupName: ${{variables.resourceGroupName}}
-    csmFile: main.json
-    deploymentOutputs: deploymentOutput
+    provider: 'azurerm'
+    command: 'init'
+    backendServiceArm: 'MCAPS Hybrid State'
+    backendAzureRmResourceGroupName: 'DevOpsSandboxState'
+    backendAzureRmStorageAccountName: 'devopssandboxstate'
+    backendAzureRmContainerName: 'state'
+    backendAzureRmKey: 'tf/terraform.tfstate'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
 
-- task: Powershell@2
-  displayName: 'Process deployment output'  
+- task: TerraformTaskV3@3
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    environmentServiceNameAzureRM: 'MCAPS Hybrid State'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+
+- task: TerraformTaskV3@3
+  name: 'terraformApply'
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    environmentServiceNameAzureRM: 'MCAPS Hybrid State'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+
+- task: PowerShell@2
+  name: 'terraformOutput'
+  displayName: 'Process terraform output'
   inputs:
     targetType: inline
     script: |
-      $var=ConvertFrom-Json '$(deploymentOutput)'
-      $value=$var.functionName.value
-
-      Write-Output $value
-      Write-Host "##vso[task.setvariable variable=functionName;]$value"
+      $terraformOutput = Get-Content "$(terraformApply.jsonOutputVariablesPath)" | ConvertFrom-Json
+      $terraformOutput | Get-Member -MemberType NoteProperty | % { $o = $terraformOutput.($_.Name); 
+      Write-Host "##vso[task.setvariable variable=$($_.Name);isoutput=true;issecret=$($o.sensitive)]$($o.value)" }
 
 - task: AzureFunctionApp@1
   displayName: 'Deploy Function App'  
   inputs:
     azureSubscription: ${{variables.azureServiceConnection}}
-    appName: $(functionName)
+    appName: $(terraformOutput.function_name)
     appType: functionApp
     package: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output\publish_output.zip'
     deploymentMethod: zipDeploy
 
+#
+# Deployment via Bicep
+#
+
 #- task: AzureCLI@2
+#  displayName: 'Compile Bicep to ARM'
 #  inputs:
 #    azureSubscription: ${{variables.azureServiceConnection}}
 #    scriptType: ps
 #    scriptLocation: inlineScript
-#    inlineScript: |
-#      az --version
-#      az deployment group create --resource-group ${{variables.resourceGroupName}} --template-file ${{variables.templateFile}}
+#    inlineScript: az bicep build --file main.bicep
 #
-#      $var=ConvertFrom-Json '$(functionName)'
+#- task: AzureResourceGroupDeployment@2
+#  displayName: 'Deploy Bicep'  
+#  inputs:
+#    azureSubscription: ${{variables.azureServiceConnection}}
+#    resourceGroupName: ${{variables.resourceGroupName}}
+#    csmFile: main.json
+#    deploymentOutputs: deploymentOutput
+#
+#- task: Powershell@2
+#  displayName: 'Process deployment output'  
+#  inputs:
+#    targetType: inline
+#    script: |
+#      $var=ConvertFrom-Json '$(deploymentOutput)'
 #      $value=$var.functionName.value
 #
 #      Write-Output $value
 #      Write-Host "##vso[task.setvariable variable=functionName;]$value"
+#
+#- task: AzureFunctionApp@1
+#  displayName: 'Deploy Function App'  
+#  inputs:
+#    azureSubscription: ${{variables.azureServiceConnection}}
+#    appName: $(functionName)
+#    appType: functionApp
+#    package: '$(System.DefaultWorkingDirectory)\${{variables.sourceDirectory}}\DevOpsSandbox\publish_output\publish_output.zip'
+#    deploymentMethod: zipDeploy
